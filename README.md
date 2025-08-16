@@ -10,9 +10,4 @@ The majority of cli submits do not required the "go run" command anyway, and fro
 
 This is for learning(killing my boredom) you know the drill
 
-# Current on
-
-CH4 L1
-
-![Bored Sleeping GIF](https://tenor.com/pt-BR/view/zaza-zazaki-kirmancki-kurdish-ez-gif-6478710704345331969)
-
+<img style="margin: 0 auto" src="https://i.imgur.com/RlniyQy.gif" height="200">
