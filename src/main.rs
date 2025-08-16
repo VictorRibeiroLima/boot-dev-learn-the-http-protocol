@@ -55,7 +55,9 @@ fn main() {
     for stream in listener.incoming() {
         match stream {
             Ok(stream) => {
-                handle_connection(stream);
+                thread::spawn(move || {
+                    handle_connection(stream);
+                });
             }
             Err(err) => {
                 eprintln!("{}", err);
