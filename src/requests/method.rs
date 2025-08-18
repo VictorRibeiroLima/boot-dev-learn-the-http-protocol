@@ -1,6 +1,6 @@
 use std::{fmt::Display, result};
 
-use crate::requests::error::Error;
+use crate::error::Error;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HttpMethod {
