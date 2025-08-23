@@ -152,4 +152,40 @@ mod test {
         // Should fail with unknown method, since 1025 'A's is not a valid method
         assert_eq!(err, Error::UnknownHttpMethod(long_method));
     }
+
+    #[test]
+    fn test_parsing_headers() {
+        let request =  "GET /coffee HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n";
+        let reader = ChunkReader::new(request, 2);
+        let request = Request::new_from_reader(reader).unwrap();
+        assert_eq!(
+            request.headers.get("host"),
+            Some(&"localhost:42069".to_string())
+        );
+        assert_eq!(
+            request.headers.get("user-agent"),
+            Some(&"curl/7.81.0".to_string())
+        );
+        assert_eq!(request.headers.get("accept"), Some(&"*/*".to_string()));
+    }
+
+    #[test]
+    fn test_parsing_headers_multiple_values() {
+        let request =  "GET /coffee HTTP/1.1\r\nHost: localhost:42069\r\nSet-Person: lane-loves-go\r\nSet-Person: prime-loves-zig\r\nSet-Person: tj-loves-ocaml\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n";
+        let reader = ChunkReader::new(request, 2);
+        let request = Request::new_from_reader(reader).unwrap();
+        assert_eq!(
+            request.headers.get("host"),
+            Some(&"localhost:42069".to_string())
+        );
+        assert_eq!(
+            request.headers.get("user-agent"),
+            Some(&"curl/7.81.0".to_string())
+        );
+        assert_eq!(
+            request.headers.get("set-person"),
+            Some(&"lane-loves-go, prime-loves-zig, tj-loves-ocaml".to_string())
+        );
+        assert_eq!(request.headers.get("accept"), Some(&"*/*".to_string()));
+    }
 }

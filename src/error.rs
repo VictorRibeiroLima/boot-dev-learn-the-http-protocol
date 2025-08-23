@@ -15,6 +15,7 @@ impl PartialEq for Error {
             (Self::UnsupportedHttpVersion(l0), Self::UnsupportedHttpVersion(r0)) => l0 == r0,
             (Self::InvalidLinePartSize(l0), Self::InvalidLinePartSize(r0)) => l0 == r0,
             (Self::ReaderError(_), Self::ReaderError(_)) => true,
+            (Self::MalFormedHeader(l0), Self::MalFormedHeader(r0)) => l0 == r0,
             _ => false,
         }
     }

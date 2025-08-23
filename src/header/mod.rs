@@ -1,8 +1,7 @@
 use std::{
     collections::HashMap,
     fmt::{self, Display},
-    ops::{Deref, DerefMut, Index},
-    str::Chars,
+    ops::{Deref, DerefMut},
 };
 
 use crate::{error::Error, Result, SEPARATOR};
@@ -33,6 +32,7 @@ impl DerefMut for Headers {
     }
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct ProtoHeader {
     pub key: String,
     pub value: String,
@@ -58,10 +58,10 @@ impl ProtoHeader {
             return (2, Ok(None));
         }
 
-        let data = &data[..b_idx];
+        let original_data = &data[..b_idx];
 
-        let data = String::from_utf8_lossy(data);
-        let data = data.trim();
+        let original_data = String::from_utf8_lossy(original_data);
+        let data = original_data.trim();
         let split_index = match data.find(':') {
             Some(idx) => idx,
             None => {
@@ -74,17 +74,17 @@ impl ProtoHeader {
         let value = &value[1..];
 
         if value.len() < 1 || key.len() < 1 {
-            return (0, Err(Error::MalFormedHeader(data.to_string())));
+            return (0, Err(Error::MalFormedHeader(original_data.to_string())));
         }
         if key.chars().last() == Some(' ') {
-            return (0, Err(Error::MalFormedHeader(data.to_string())));
+            return (0, Err(Error::MalFormedHeader(original_data.to_string())));
         }
         let key = key.trim();
         let value = value.trim();
 
         for c in key.chars() {
             if !Self::is_token(c) {
-                return (0, Err(Error::MalFormedHeader(data.to_string())));
+                return (0, Err(Error::MalFormedHeader(original_data.to_string())));
             }
         }
 
@@ -119,5 +119,49 @@ impl ProtoHeader {
             return false;
         }
         return true;
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::{error::Error, header::ProtoHeader};
+
+    #[test]
+    fn test_valid_header() {
+        let data = "Host: localhost:42069\r\n\r\n";
+        let (b_read, result) = ProtoHeader::new_from_bytes(data.as_bytes());
+        assert_eq!(b_read, 23);
+        assert!(result.is_ok());
+        let proto_header = result.unwrap();
+        assert!(proto_header.is_some());
+        let proto_header = proto_header.unwrap();
+        assert_eq!(proto_header.key, "host");
+        assert_eq!(proto_header.value, "localhost:42069");
+    }
+
+    #[test]
+    fn test_invalid_spacing_header() {
+        let data = "       Host : localhost:42069       \r\n\r\n";
+        let (b_read, result) = ProtoHeader::new_from_bytes(data.as_bytes());
+        assert_eq!(b_read, 0);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert_eq!(
+            err,
+            Error::MalFormedHeader("       Host : localhost:42069       ".to_string())
+        );
+    }
+
+    #[test]
+    fn test_invalid_token_on_key_header() {
+        let data = "H©st: localhost:42069\r\n\r\n";
+        let (b_read, result) = ProtoHeader::new_from_bytes(data.as_bytes());
+        assert_eq!(b_read, 0);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert_eq!(
+            err,
+            Error::MalFormedHeader("H©st: localhost:42069".to_string())
+        );
     }
 }
