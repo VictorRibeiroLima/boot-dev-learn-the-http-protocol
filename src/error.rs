@@ -6,6 +6,9 @@ pub enum Error {
     InvalidLinePartSize(usize),
     ReaderError(std::io::Error),
     MalFormedHeader(String),
+    MalFormedContentLengthHeader(String),
+    BodyBiggerThanContentLength,
+    BodySmallerThanContentLength,
 }
 
 impl PartialEq for Error {
@@ -16,6 +19,11 @@ impl PartialEq for Error {
             (Self::InvalidLinePartSize(l0), Self::InvalidLinePartSize(r0)) => l0 == r0,
             (Self::ReaderError(_), Self::ReaderError(_)) => true,
             (Self::MalFormedHeader(l0), Self::MalFormedHeader(r0)) => l0 == r0,
+            (Self::MalFormedContentLengthHeader(l0), Self::MalFormedContentLengthHeader(r0)) => {
+                l0 == r0
+            }
+            (Self::BodyBiggerThanContentLength, Self::BodyBiggerThanContentLength) => true,
+            (Self::BodySmallerThanContentLength, Self::BodySmallerThanContentLength) => true,
             _ => false,
         }
     }

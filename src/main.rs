@@ -13,8 +13,13 @@ const SEPARATOR: &[u8; 2] = b"\r\n";
 type Result<T> = result::Result<T, Error>;
 
 fn handle_connection(stream: TcpStream) {
-    let request = Request::new_from_reader(stream).unwrap();
-    println!("{}", request)
+    let request = Request::new_from_reader(&stream);
+    match request {
+        Ok(r) => println!("{}", r),
+        Err(e) => {
+            println!("ERROR: {:?}", e)
+        }
+    }
 }
 
 fn main() {

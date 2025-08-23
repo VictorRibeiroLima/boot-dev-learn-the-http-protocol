@@ -24,6 +24,8 @@ impl Display for Request {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.line)?;
         write!(f, "{}", self.headers)?;
+        writeln!(f, "Body:")?;
+        write!(f, "{}", String::from_utf8_lossy(&self.body))?;
         Ok(())
     }
 }
@@ -36,13 +38,36 @@ impl Request {
 
         buff.resize(BUFFER_INITIAL_SIZE, 0);
 
+        /*
+        I was doing this on a loop that can only break after a "final" read.
+        But when the reader is a TCPStream the n_read is only going to be 0 when the client drops the connection.
+        The "if n_read == 0" still fine because the client could drop without given me the full body
+
+        but any other conditions that evolve checking if the parser is done after a read blocks the entire thing from properly responding to a real tcp call waiting a response
+        */
         while !parser.done() {
             let n_read = r
                 .read(&mut buff[buff_idx..])
                 .map_err(|e| Error::ReaderError(e))?;
+            if n_read == 0 {
+                //This means that the content-length was not meet by the parser and we don't have any more body to read
+                //The body is smaller then the specified content-length
+                return Err(Error::BodySmallerThanContentLength);
+            }
+            /*
+                if n_read > 0 && parser.done() {
+                    //This means that the content-length was meet by the parser and we just read more that
+                    //The body is bigger than the specified content-length
+                    return Err(Error::BodyBiggerThanContentLength);
+                }
+                if n_read == 0 && parser.done() {
+                    break;
+                }
+            */
             buff_idx = buff_idx + n_read;
             let p_read = parser.parse(&buff[..buff_idx])?;
             let buff_at_the_limit = buff_idx == buff.capacity();
+
             if p_read != 0 {
                 buff.copy_within(p_read..buff_idx, 0);
                 buff_idx = buff_idx - p_read;
@@ -55,7 +80,7 @@ impl Request {
         Ok(Self {
             line: parser.line.unwrap(), //see later
             headers: parser.headers,
-            body: Default::default(),
+            body: parser.body.unwrap(), //see later
         })
     }
 }
