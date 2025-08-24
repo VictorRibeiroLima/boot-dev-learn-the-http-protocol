@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Display, io::Read};
+use std::{fmt::Display, io::Read};
 
 use crate::{
     error::Error,
@@ -212,5 +212,69 @@ mod test {
             Some(&"lane-loves-go, prime-loves-zig, tj-loves-ocaml".to_string())
         );
         assert_eq!(request.headers.get("accept"), Some(&"*/*".to_string()));
+    }
+
+    #[test]
+    fn test_parsing_body_good_body() {
+        let request = "POST /submit HTTP/1.1\r\n".to_string()
+            + "Host: localhost:42069\r\n"
+            + "Content-Length: 13\r\n"
+            + "\r\n"
+            + "hello world!\n";
+
+        let reader = ChunkReader::new(&request, 2);
+        let request = Request::new_from_reader(reader).unwrap();
+        assert_eq!(
+            request.headers.get("host"),
+            Some(&"localhost:42069".to_string())
+        );
+        assert_eq!(
+            request.headers.get("content-length"),
+            Some(&"13".to_string())
+        );
+        assert_eq!(
+            String::from_utf8_lossy(&request.body).to_string(),
+            "hello world!\n".to_string()
+        )
+    }
+
+    #[test]
+    fn test_parsing_body_partial_content() {
+        let request = "POST /submit HTTP/1.1\r\n".to_string()
+            + "Host: localhost:42069\r\n"
+            + "Content-Length: 20\r\n"
+            + "\r\n"
+            + "partial content";
+
+        let reader = ChunkReader::new(&request, 2);
+        let error = Request::new_from_reader(reader).unwrap_err();
+
+        assert_eq!(error, Error::BodySmallerThanContentLength);
+    }
+
+    #[test]
+    fn test_parsing_body_bigger_than_content_length() {
+        let request = "POST /submit HTTP/1.1\r\n".to_string()
+            + "Host: localhost:42069\r\n"
+            + "Content-Length: 13\r\n"
+            + "\r\n"
+            + "hello world!\naaaaaaaaaaaaaaaaaaaa";
+
+        let reader = ChunkReader::new(&request, 2);
+
+        //Maybe this is wrong and we should error instead of grabbing just enough of the data
+        let request = Request::new_from_reader(reader).unwrap();
+        assert_eq!(
+            request.headers.get("host"),
+            Some(&"localhost:42069".to_string())
+        );
+        assert_eq!(
+            request.headers.get("content-length"),
+            Some(&"13".to_string())
+        );
+        assert_eq!(
+            String::from_utf8_lossy(&request.body).to_string(),
+            "hello world!\n".to_string()
+        )
     }
 }

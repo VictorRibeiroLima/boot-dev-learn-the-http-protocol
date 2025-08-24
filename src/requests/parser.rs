@@ -1,4 +1,4 @@
-use std::{collections::HashMap, result};
+use std::cmp::min;
 
 use crate::{
     error::Error,
@@ -145,9 +145,6 @@ impl RequestParser {
         let read_data = data.len();
         let content_length = self.content_length()?;
         self.content_length = content_length;
-        if read_data > content_length {
-            return Err(Error::BodyBiggerThanContentLength);
-        }
 
         let body = match self.body.as_mut() {
             None => {
@@ -158,6 +155,15 @@ impl RequestParser {
             }
             Some(b) => b,
         };
+
+        //I really don't know if should error when the data is bigger the the "content_length" our just read until there
+        //the leader seems the "safer option" to refactor
+
+        //If body already has some data we need to grab less data
+        let remaining_length = content_length - body.len();
+        let end = min(remaining_length, read_data);
+
+        let data = &data[..end];
 
         body.extend_from_slice(data);
         if body.len() == content_length {
