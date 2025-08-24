@@ -127,15 +127,7 @@ impl RequestParser {
 
             //SAFETY: If bytes where read than we have a line
             let result = unsafe { result.unwrap_unchecked() };
-            let key = result.key;
-            let value = result.value;
-
-            match self.headers.get_mut(&key) {
-                Some(v) => v.push_str(format!(", {}", value).as_str()),
-                None => {
-                    self.headers.insert(key, value);
-                }
-            }
+            self.headers.push_from_proto(result);
         }
     }
 

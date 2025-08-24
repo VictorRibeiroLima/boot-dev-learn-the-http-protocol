@@ -1,19 +1,30 @@
 use std::{
-    io::Error,
+    io::{Error, Write},
     net::{SocketAddr, TcpListener, TcpStream},
     thread,
 };
 
-use crate::requests::Request;
+use crate::{
+    requests::Request,
+    response::{code::StatusCode, Response},
+};
 
-fn handle_connection(stream: TcpStream) {
+fn handle_connection(mut stream: TcpStream) {
     let request = Request::new_from_reader(&stream);
-    match request {
-        Ok(r) => println!("{}", r),
+    let request = match request {
+        Ok(r) => r,
         Err(e) => {
-            println!("ERROR: {:?}", e)
+            println!("ERROR: {:?}", e);
+            return;
         }
-    }
+    };
+
+    _ = request;
+    let response = Response::new("Hello World!\n".to_string(), StatusCode::OK);
+    let bytes = response.to_bytes();
+    let a = String::from_utf8_lossy(&bytes);
+    println!("{:?}", a);
+    stream.write_all(&bytes).unwrap();
 }
 
 pub struct Server {

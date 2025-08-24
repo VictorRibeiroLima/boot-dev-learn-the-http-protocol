@@ -83,6 +83,18 @@ impl Request {
             body: parser.body.unwrap(), //see later
         })
     }
+
+    pub fn line(&self) -> &RequestLine {
+        &self.line
+    }
+
+    pub fn headers(&self) -> &Headers {
+        &self.headers
+    }
+
+    pub fn body(&self) -> &[u8] {
+        &self.body
+    }
 }
 
 #[cfg(test)]

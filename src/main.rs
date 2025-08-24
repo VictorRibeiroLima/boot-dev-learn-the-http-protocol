@@ -5,6 +5,7 @@ use crate::{error::Error, server::Server};
 mod error;
 mod header;
 mod requests;
+mod response;
 mod server;
 
 const SEPARATOR: &[u8; 2] = b"\r\n";

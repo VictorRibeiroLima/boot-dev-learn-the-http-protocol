@@ -1,13 +1,16 @@
 use std::{
     collections::HashMap,
     fmt::{self, Display},
+    io::{self, Write},
     ops::{Deref, DerefMut},
 };
 
 use crate::{error::Error, Result, SEPARATOR};
 
+const JOIN_HEADER: &[u8; 2] = b": ";
+
 #[derive(Debug, Default)]
-pub struct Headers(pub HashMap<String, String>);
+pub struct Headers(HashMap<String, String>);
 
 impl Display for Headers {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -29,6 +32,47 @@ impl Deref for Headers {
 impl DerefMut for Headers {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
+    }
+}
+
+impl Headers {
+    pub fn write_to<W: Write>(&self, mut w: W) -> io::Result<usize> {
+        let mut size = 0;
+        for (key, value) in self.iter() {
+            size += w.write(key.as_bytes())?;
+            size += w.write(JOIN_HEADER)?;
+            size += w.write(value.as_bytes())?;
+            size += w.write(SEPARATOR)?;
+        }
+        size += w.write(SEPARATOR)?;
+        Ok(size)
+    }
+
+    pub fn byte_len(&self) -> usize {
+        //It always has the final "/r/n"
+        let mut result = 2;
+        for (key, value) in self.iter() {
+            result += key.as_bytes().len();
+            result += value.as_bytes().len();
+            //Accounting for ": " and "/r/n"
+            result += 4;
+        }
+        return result;
+    }
+
+    pub fn push_from_proto(&mut self, ph: ProtoHeader) {
+        let key = ph.key;
+        let value = ph.value;
+        self.insert(key, value);
+    }
+
+    pub fn insert(&mut self, key: String, value: String) {
+        match self.get_mut(&key) {
+            Some(v) => v.push_str(format!(", {}", value).as_str()),
+            None => {
+                self.0.insert(key, value);
+            }
+        };
     }
 }
 
