@@ -9,7 +9,7 @@ use crate::{
     response::{code::StatusCode, Response},
 };
 
-fn handle_connection(mut stream: TcpStream) {
+fn handle_connection(stream: TcpStream) {
     let request = Request::new_from_reader(&stream);
     let request = match request {
         Ok(r) => r,
