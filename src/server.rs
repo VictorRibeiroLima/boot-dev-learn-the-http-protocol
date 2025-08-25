@@ -21,10 +21,7 @@ fn handle_connection(mut stream: TcpStream) {
 
     _ = request;
     let response = Response::new("Hello World!\n".to_string(), StatusCode::OK);
-    let bytes = response.to_bytes();
-    let a = String::from_utf8_lossy(&bytes);
-    println!("{:?}", a);
-    stream.write_all(&bytes).unwrap();
+    response.write_to(stream).unwrap();
 }
 
 pub struct Server {

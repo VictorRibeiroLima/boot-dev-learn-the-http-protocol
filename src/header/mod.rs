@@ -36,16 +36,14 @@ impl DerefMut for Headers {
 }
 
 impl Headers {
-    pub fn write_to<W: Write>(&self, mut w: W) -> io::Result<usize> {
-        let mut size = 0;
+    pub fn write_to<W: Write>(&self, mut w: W) -> io::Result<()> {
         for (key, value) in self.iter() {
-            size += w.write(key.as_bytes())?;
-            size += w.write(JOIN_HEADER)?;
-            size += w.write(value.as_bytes())?;
-            size += w.write(SEPARATOR)?;
+            w.write_all(key.as_bytes())?;
+            w.write_all(JOIN_HEADER)?;
+            w.write_all(value.as_bytes())?;
+            w.write_all(SEPARATOR)?;
         }
-        size += w.write(SEPARATOR)?;
-        Ok(size)
+        w.write_all(SEPARATOR)
     }
 
     pub fn byte_len(&self) -> usize {
