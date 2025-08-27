@@ -51,6 +51,7 @@ fn handle_connection(stream: TcpStream, endpoints: Arc<Endpoint>) {
 }
 
 pub struct Server {
+    addr: SocketAddr,
     listener: TcpListener,
     endpoints: Endpoint,
 }
@@ -61,6 +62,7 @@ impl Server {
         let listener = TcpListener::bind(addr)?;
         let endpoints: Endpoint = Default::default();
         Ok(Self {
+            addr,
             listener,
             endpoints,
         })
@@ -72,6 +74,10 @@ impl Server {
     }
 
     pub fn list_and_serve(self) {
+        for endpoint in self.endpoints.keys() {
+            println!("{}", endpoint)
+        }
+        println!("Server listening at {}", self.addr);
         //Someday i want to comeback to this and be able to not use a arc
         let endpoints = Arc::new(self.endpoints);
         for stream in self.listener.incoming() {
