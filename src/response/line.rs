@@ -1,6 +1,6 @@
 use std::io::{self, Write};
 
-use crate::{response::code::StatusCode, SEPARATOR};
+use crate::{server::code::StatusCode, SEPARATOR};
 
 const VERSION_BYTES: &[u8; 8] = b"HTTP/1.1";
 

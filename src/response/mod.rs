@@ -1,11 +1,8 @@
 use std::io::{self, Write};
 
-use crate::{
-    header::Headers,
-    response::{code::StatusCode, line::ResponseLine},
-};
+use crate::{header::Headers, response::line::ResponseLine, server::code::StatusCode};
 
-pub mod code;
+pub mod error;
 mod line;
 
 pub struct Response {
@@ -15,12 +12,16 @@ pub struct Response {
 }
 
 impl Response {
-    pub fn new(body: String, code: StatusCode) -> Self {
-        let body = body.as_bytes().to_vec();
+    pub fn new(body: Option<String>, code: StatusCode) -> Self {
+        let body = match body {
+            Some(b) => b.as_bytes().to_vec(),
+            None => Vec::new(),
+        };
         let content_length = body.len();
 
         let mut headers = Headers::default();
         headers.insert("Content-Length".to_string(), content_length.to_string());
+        headers.insert("Connection".to_string(), "close".to_string());
         headers.insert("Content-Type".to_string(), "text/plain".to_string());
 
         let line = ResponseLine::new(code);

@@ -8,7 +8,6 @@ use crate::{
 };
 
 mod line;
-mod method;
 mod parser;
 
 const BUFFER_INITIAL_SIZE: usize = 1024;
@@ -100,7 +99,10 @@ impl Request {
 #[cfg(test)]
 mod test {
 
-    use crate::requests::{method::HttpMethod, Error, Request};
+    use crate::{
+        method::HttpMethod,
+        requests::{Error, Request},
+    };
 
     /// A test utility to simulate reading a variable number of bytes per chunk from a string.
     struct ChunkReader {

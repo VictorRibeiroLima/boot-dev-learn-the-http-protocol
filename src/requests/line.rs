@@ -1,10 +1,6 @@
 use std::fmt::Display;
 
-use crate::{
-    error::Error,
-    requests::{method::HttpMethod, Result},
-    SEPARATOR,
-};
+use crate::{error::Error, method::HttpMethod, requests::Result, SEPARATOR};
 
 #[derive(Debug)]
 pub struct RequestLine {

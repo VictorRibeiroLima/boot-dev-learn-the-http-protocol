@@ -2,7 +2,7 @@ use std::{fmt::Display, result};
 
 use crate::error::Error;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum HttpMethod {
     GET,
     POST,
