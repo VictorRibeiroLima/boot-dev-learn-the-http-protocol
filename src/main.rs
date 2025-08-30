@@ -41,18 +41,18 @@ fn all_good(_req: Request, writer: &mut ResponseWriter) {
 fn main() {
     let mut server = Server::new(42069).expect("server to open");
 
-    server.add_handle_func(
-        method::HttpMethod::GET,
-        "/yourproblem".to_string(),
-        your_problem,
-    );
-    server.add_handle_func(
-        method::HttpMethod::GET,
-        "/myproblem".to_string(),
-        my_problem,
-    );
-    server.add_handle_func(method::HttpMethod::GET, "/".to_string(), all_good);
-    server.add_handle_func(method::HttpMethod::GET, "/use-nvim".to_string(), all_good);
+    server
+        .add_handle_func(method::HttpMethod::GET, "/yourproblem", your_problem)
+        .expect("To add endpoint");
+    server
+        .add_handle_func(method::HttpMethod::GET, "/myproblem", my_problem)
+        .expect("To add endpoint");
+    server
+        .add_handle_func(method::HttpMethod::GET, "/", all_good)
+        .expect("To add endpoint");
+    server
+        .add_handle_func(method::HttpMethod::GET, "/use-nvim", all_good)
+        .expect("To add endpoint");
 
     server.list_and_serve();
 }

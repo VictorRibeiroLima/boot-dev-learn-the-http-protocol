@@ -7,8 +7,10 @@ use std::{
 };
 
 use crate::{
-    method::HttpMethod, requests::Request, response::writer::ResponseWriter,
-    server::code::StatusCode,
+    method::HttpMethod,
+    requests::Request,
+    response::writer::ResponseWriter,
+    server::{code::StatusCode, path::Path},
 };
 
 pub mod code;
@@ -17,8 +19,28 @@ pub mod response;
 
 pub type HandleFunc = fn(req: Request, writer: &mut ResponseWriter);
 
-type Path = String;
-type Endpoint = HashMap<Path, HandleFunc>;
+type Endpoints = Vec<(Path, HandleFunc)>;
+
+fn find_endpoint<'a>(p: &Path, endpoints: &'a Endpoints) -> Option<(&'a Path, HandleFunc)> {
+    endpoints
+        .iter()
+        .find(|(ep, _)| ep == p)
+        .map(|(ep, func)| (ep, *func))
+}
+
+fn insert_endpoint(
+    method: HttpMethod,
+    path: &str,
+    func: HandleFunc,
+    endpoints: &mut Endpoints,
+) -> Result<(), String> {
+    let p = Path::new(method, path)?;
+    if find_endpoint(&p, endpoints).is_some() {
+        return Err("Endpoint already registred".to_string());
+    }
+    endpoints.push((p, func));
+    Ok(())
+}
 
 fn not_found(_req: Request, writer: &mut ResponseWriter) {
     let body = include_bytes!("../../static/not-found.html");
@@ -27,7 +49,7 @@ fn not_found(_req: Request, writer: &mut ResponseWriter) {
     let _ = writer.write_header("Content-Type", "text/html");
 }
 
-fn handle_connection(stream: TcpStream, endpoints: Arc<Endpoint>) {
+fn handle_connection(stream: TcpStream, endpoints: Arc<Endpoints>) {
     let request = Request::new_from_reader(&stream);
     let request = match request {
         Ok(r) => r,
@@ -38,10 +60,10 @@ fn handle_connection(stream: TcpStream, endpoints: Arc<Endpoint>) {
     };
 
     let line = request.line();
-    let endpoint = format!("{} {}", line.method, line.request_target);
+    let path = Path::new(line.method, &line.request_target).unwrap(); //see latter
     let mut writer = ResponseWriter::new(&stream);
-    let endpoint = match endpoints.get(&endpoint) {
-        Some(func) => *func,
+    let endpoint = match find_endpoint(&path, &endpoints) {
+        Some((_, func)) => func,
         None => not_found,
     };
 
@@ -61,14 +83,14 @@ fn handle_connection(stream: TcpStream, endpoints: Arc<Endpoint>) {
 pub struct Server {
     addr: SocketAddr,
     listener: TcpListener,
-    endpoints: Endpoint,
+    endpoints: Endpoints,
 }
 
 impl Server {
     pub fn new(port: u16) -> Result<Self, Error> {
         let addr = SocketAddr::from(([127, 0, 0, 1], port));
         let listener = TcpListener::bind(addr)?;
-        let endpoints: Endpoint = Default::default();
+        let endpoints: Endpoints = Default::default();
         Ok(Self {
             addr,
             listener,
@@ -76,14 +98,18 @@ impl Server {
         })
     }
 
-    pub fn add_handle_func(&mut self, method: HttpMethod, path: String, func: HandleFunc) {
-        let endpoint = format!("{} {}", method, path);
-        self.endpoints.insert(endpoint, func);
+    pub fn add_handle_func(
+        &mut self,
+        method: HttpMethod,
+        path: &str,
+        func: HandleFunc,
+    ) -> Result<(), String> {
+        insert_endpoint(method, path, func, &mut self.endpoints)
     }
 
     pub fn list_and_serve(self) {
-        for endpoint in self.endpoints.keys() {
-            println!("{}", endpoint)
+        for (p, _) in &self.endpoints {
+            println!("{}", p)
         }
         println!("Server listening at {}", self.addr);
         //Someday i want to comeback to this and be able to not use a arc

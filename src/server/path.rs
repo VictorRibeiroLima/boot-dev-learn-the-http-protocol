@@ -1,20 +1,22 @@
-use std::{collections::HashMap, ops::Index};
+use std::{collections::HashMap, fmt::Display, ops::Index};
+
+use crate::method::{self, HttpMethod};
 
 #[derive(Debug)]
 pub struct Path {
+    method: HttpMethod,
     raw_value: String,
     segments: Option<Vec<String>>,
     labels: Option<HashMap<String, usize>>,
     has_wild_card: bool,
 }
 
-impl TryFrom<String> for Path {
-    type Error = String;
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
-        let raw_value = value.clone();
+impl Path {
+    pub fn new(method: HttpMethod, value: &str) -> Result<Self, String> {
+        let raw_value = value.to_string();
         if !raw_value.contains("{") {
             return Ok(Self {
+                method,
                 raw_value,
                 has_wild_card: false,
                 labels: None,
@@ -73,6 +75,7 @@ impl TryFrom<String> for Path {
         }
 
         Ok(Self {
+            method,
             raw_value,
             segments: Some(segments),
             labels: Some(labels),
@@ -81,16 +84,11 @@ impl TryFrom<String> for Path {
     }
 }
 
-impl TryFrom<&str> for Path {
-    type Error = String;
-
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        Self::try_from(value.to_string())
-    }
-}
-
 impl PartialEq for Path {
     fn eq(&self, other: &Self) -> bool {
+        if self.method != other.method {
+            return false;
+        }
         if self.raw_value == other.raw_value {
             return true;
         }
@@ -138,22 +136,39 @@ impl PartialEq for Path {
 
 impl Eq for Path {}
 
+impl Display for Path {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} {}", self.method, self.raw_value)
+    }
+}
 #[cfg(test)]
 mod test {
-    use crate::server::path::Path;
+    use crate::{method::HttpMethod, server::path::Path};
 
     #[test]
     fn test_equal_simple_paths() {
+        let method = HttpMethod::GET;
         let base = "/users";
-        let p1 = Path::try_from(base).unwrap();
-        let p2 = Path::try_from(base).unwrap();
+        let p1 = Path::new(method, base).unwrap();
+        let p2 = Path::new(method, base).unwrap();
         assert_eq!(p1, p2)
     }
 
     #[test]
+    fn test_not_equal_simple_paths() {
+        let method = HttpMethod::GET;
+        let method2 = HttpMethod::POST;
+        let base = "/users";
+        let p1 = Path::new(method, base).unwrap();
+        let p2 = Path::new(method2, base).unwrap();
+        assert_ne!(p1, p2)
+    }
+
+    #[test]
     fn create_path_with_one_label() {
+        let method = HttpMethod::GET;
         let base = "/users/{id}";
-        let p1 = Path::try_from(base).unwrap();
+        let p1 = Path::new(method, base).unwrap();
         assert_eq!(p1.raw_value, base.to_string());
         assert!(p1.has_wild_card);
         assert!(p1.segments.is_some());
@@ -170,8 +185,9 @@ mod test {
 
     #[test]
     fn create_path_with_one_label_and_trailing_segment() {
+        let method = HttpMethod::GET;
         let base = "/users/{id}/some";
-        let p1 = Path::try_from(base).unwrap();
+        let p1 = Path::new(method, base).unwrap();
         assert_eq!(p1.raw_value, base.to_string());
         assert!(p1.has_wild_card);
         assert!(p1.segments.is_some());
@@ -189,8 +205,9 @@ mod test {
 
     #[test]
     fn create_path_with_two_labels() {
+        let method = HttpMethod::GET;
         let base = "/users/{id}/{name}";
-        let p1 = Path::try_from(base).unwrap();
+        let p1 = Path::new(method, base).unwrap();
         assert_eq!(p1.raw_value, base.to_string());
         assert!(p1.has_wild_card);
         assert!(p1.segments.is_some());
@@ -209,8 +226,9 @@ mod test {
 
     #[test]
     fn create_path_with_two_labels_with_trailing_segment() {
+        let method = HttpMethod::GET;
         let base = "/users/{id}/{name}/some";
-        let p1 = Path::try_from(base).unwrap();
+        let p1 = Path::new(method, base).unwrap();
         assert_eq!(p1.raw_value, base.to_string());
         assert!(p1.has_wild_card);
         assert!(p1.segments.is_some());
@@ -230,88 +248,99 @@ mod test {
 
     #[test]
     fn test_equal_path_with_wild_cards() {
+        let method = HttpMethod::GET;
         let p1 = "/users/{id}";
-        let p1 = Path::try_from(p1).unwrap();
+        let p1 = Path::new(method, p1).unwrap();
         let p2 = "/users/1";
-        let p2 = Path::try_from(p2).unwrap();
+        let p2 = Path::new(method, p2).unwrap();
         assert_eq!(p1, p2)
     }
 
     #[test]
     fn test_equal_path_with_wild_cards_with_trailing_segment() {
+        let method = HttpMethod::GET;
         let p1 = "/users/{id}/some";
-        let p1 = Path::try_from(p1).unwrap();
+        let p1 = Path::new(method, p1).unwrap();
         let p2 = "/users/1/some";
-        let p2 = Path::try_from(p2).unwrap();
+        let p2 = Path::new(method, p2).unwrap();
         assert_eq!(p1, p2)
     }
 
     #[test]
     fn test_equal_path_with_wild_cards_with_trailing_segment_but_not_equal_1() {
+        let method = HttpMethod::GET;
         let p1 = "/users/{id}/some";
-        let p1 = Path::try_from(p1).unwrap();
+        let p1 = Path::new(method, p1).unwrap();
         let p2 = "/users/1";
-        let p2 = Path::try_from(p2).unwrap();
+        let p2 = Path::new(method, p2).unwrap();
         assert_ne!(p1, p2);
     }
 
     #[test]
     fn test_equal_path_with_wild_cards_with_trailing_segment_but_not_equal_2() {
+        let method = HttpMethod::GET;
         let p1 = "/users/{id}";
-        let p1 = Path::try_from(p1).unwrap();
+        let p1 = Path::new(method, p1).unwrap();
         let p2 = "/users/1/some";
-        let p2 = Path::try_from(p2).unwrap();
+        let p2 = Path::new(method, p2).unwrap();
         assert_eq!(p1, p2);
     }
 
     #[test]
     fn test_equal_path_2_wild_cards_and_trailing_segment() {
+        let method = HttpMethod::GET;
         let p1 = "/users/{id}/info/{name}/some";
-        let p1 = Path::try_from(p1).unwrap();
+        let p1 = Path::new(method, p1).unwrap();
         let p2 = "/users/1/info/mario/some";
-        let p2 = Path::try_from(p2).unwrap();
+        let p2 = Path::new(method, p2).unwrap();
         assert_eq!(p1, p2);
     }
 
     #[test]
     fn test_equal_path_2_wild_cards_and_trailing_segment_2() {
+        let method = HttpMethod::GET;
         let p1 = "/users/{id}/info/{name}/some";
-        let p1 = Path::try_from(p1).unwrap();
+        let p1 = Path::new(method, p1).unwrap();
         let p2 = "/users/1/mario/info/some";
-        let p2 = Path::try_from(p2).unwrap();
+        let p2 = Path::new(method, p2).unwrap();
         assert_ne!(p1, p2);
     }
 
     #[test]
     fn test_equal_same_segments_different_labels() {
+        let method = HttpMethod::GET;
         let p1 = "/users/{id}/info/{name}/some";
-        let p1 = Path::try_from(p1).unwrap();
+        let p1 = Path::new(method, p1).unwrap();
         let p2 = "/users/{name}/info/{id}/some";
-        let p2 = Path::try_from(p2).unwrap();
+        let p2 = Path::new(method, p2).unwrap();
         assert_eq!(p1, p2);
     }
 
     #[test]
     fn test_mal_formed_path() {
+        let method = HttpMethod::GET;
         let p1 = "/users/{id}/info/{name";
-        Path::try_from(p1).unwrap_err();
+        Path::new(method, p1).unwrap_err();
     }
 
     #[test]
     fn test_mal_formed_path_2() {
+        let method = HttpMethod::GET;
         let p1 = "/users/{id}}";
-        Path::try_from(p1).unwrap_err();
+        Path::new(method, p1).unwrap_err();
     }
 
     #[test]
     fn test_mal_formed_path_3() {
+        let method = HttpMethod::GET;
         let p1 = "/users/{{id}";
-        Path::try_from(p1).unwrap_err();
+        Path::new(method, p1).unwrap_err();
     }
 
     #[test]
     fn test_mal_formed_path_4() {
+        let method = HttpMethod::GET;
         let p1 = "/users/{id}/{id}";
-        Path::try_from(p1).unwrap_err();
+        Path::new(method, p1).unwrap_err();
     }
 }
