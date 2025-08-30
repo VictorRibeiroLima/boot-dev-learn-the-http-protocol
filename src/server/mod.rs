@@ -12,6 +12,7 @@ use crate::{
 };
 
 pub mod code;
+pub mod path;
 pub mod response;
 
 pub type HandleFunc = fn(req: Request, writer: &mut ResponseWriter);
