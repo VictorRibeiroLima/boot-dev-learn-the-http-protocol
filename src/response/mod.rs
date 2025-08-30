@@ -1,38 +1,18 @@
 use std::io::{self, Write};
 
-use crate::{header::Headers, response::line::ResponseLine, server::code::StatusCode};
+use crate::{header::Headers, response::line::ResponseLine};
 
 pub mod error;
 mod line;
+pub mod writer;
 
-pub struct Response {
-    line: ResponseLine,
-    headers: Headers,
-    body: Vec<u8>,
+pub struct Response<'a> {
+    line: &'a ResponseLine,
+    headers: &'a Headers,
+    body: &'a Vec<u8>,
 }
 
-impl Response {
-    pub fn new(body: Option<String>, code: StatusCode) -> Self {
-        let body = match body {
-            Some(b) => b.as_bytes().to_vec(),
-            None => Vec::new(),
-        };
-        let content_length = body.len();
-
-        let mut headers = Headers::default();
-        headers.insert("Content-Length".to_string(), content_length.to_string());
-        headers.insert("Connection".to_string(), "close".to_string());
-        headers.insert("Content-Type".to_string(), "text/plain".to_string());
-
-        let line = ResponseLine::new(code);
-
-        Self {
-            line,
-            headers,
-            body,
-        }
-    }
-
+impl Response<'_> {
     pub fn write_to<W: Write>(&self, mut w: W) -> io::Result<()> {
         self.line.write_to(&mut w)?;
         self.headers.write_to(&mut w)?;

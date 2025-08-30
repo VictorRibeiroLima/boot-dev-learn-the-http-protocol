@@ -72,6 +72,24 @@ impl Headers {
             }
         };
     }
+
+    pub fn overwrite(&mut self, key: String, value: String) {
+        match self.get_mut(&key) {
+            Some(v) => *v = value,
+            None => {
+                self.0.insert(key, value);
+            }
+        };
+    }
+
+    pub fn insert_if_not_exists(&mut self, key: String, value: String) {
+        match self.get_mut(&key) {
+            Some(_) => {}
+            None => {
+                self.0.insert(key, value);
+            }
+        };
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]

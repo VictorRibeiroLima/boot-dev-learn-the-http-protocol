@@ -7,20 +7,24 @@ use std::{
 };
 
 use crate::{
-    method::HttpMethod,
-    requests::Request,
-    response::Response,
-    server::{code::StatusCode, response::ServerResponse},
+    method::HttpMethod, requests::Request, response::writer::ResponseWriter,
+    server::code::StatusCode,
 };
 
 pub mod code;
 pub mod response;
 
-pub type HandleFunc =
-    fn(req: Request, stream: &TcpStream) -> Result<ServerResponse, ServerResponse>;
+pub type HandleFunc = fn(req: Request, writer: &mut ResponseWriter);
 
 type Path = String;
 type Endpoint = HashMap<Path, HandleFunc>;
+
+fn not_found(_req: Request, writer: &mut ResponseWriter) {
+    let body = include_bytes!("../../static/not-found.html");
+    let _ = writer.write_code(StatusCode::NotFound);
+    let _ = writer.write_body(body);
+    let _ = writer.write_header("Content-Type", "text/html");
+}
 
 fn handle_connection(stream: TcpStream, endpoints: Arc<Endpoint>) {
     let request = Request::new_from_reader(&stream);
@@ -34,20 +38,23 @@ fn handle_connection(stream: TcpStream, endpoints: Arc<Endpoint>) {
 
     let line = request.line();
     let endpoint = format!("{} {}", line.method, line.request_target);
-    let response: Response = match endpoints.get(&endpoint) {
-        Some(func) => {
-            let resp = func(request, &stream);
-            match resp {
-                Ok(res) => Response::new(res.content, res.code),
-                Err(res) => {
-                    eprint!("Server error {}", res);
-                    Response::new(res.content, res.code)
-                }
-            }
-        }
-        None => Response::new(Some("Not Found\n".to_string()), StatusCode::NotFound),
+    let mut writer = ResponseWriter::new(&stream);
+    let endpoint = match endpoints.get(&endpoint) {
+        Some(func) => *func,
+        None => not_found,
     };
-    response.write_to(stream).unwrap();
+
+    endpoint(request, &mut writer);
+    if writer.flushed() {
+        return;
+    }
+
+    match writer.flush() {
+        Err(e) => {
+            eprintln!("{}", e)
+        }
+        Ok(()) => {}
+    }
 }
 
 pub struct Server {
