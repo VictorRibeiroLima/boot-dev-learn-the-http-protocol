@@ -8,7 +8,6 @@ pub struct Path {
     raw_value: String,
     segments: Option<Vec<String>>,
     labels: Option<HashMap<String, usize>>,
-    has_wild_card: bool,
 }
 
 impl Path {
@@ -18,7 +17,6 @@ impl Path {
             return Ok(Self {
                 method,
                 raw_value,
-                has_wild_card: false,
                 labels: None,
                 segments: None,
             });
@@ -79,8 +77,15 @@ impl Path {
             raw_value,
             segments: Some(segments),
             labels: Some(labels),
-            has_wild_card: true,
         })
+    }
+
+    pub fn get_segment_by_label(&self, label: &str) -> Option<&str> {
+        let labels = self.labels.as_ref()?;
+        let segments = self.segments.as_ref()?;
+        let index = labels.get(label)?;
+        let segment = segments.get(*index)?;
+        Some(segment)
     }
 }
 
@@ -170,7 +175,6 @@ mod test {
         let base = "/users/{id}";
         let p1 = Path::new(method, base).unwrap();
         assert_eq!(p1.raw_value, base.to_string());
-        assert!(p1.has_wild_card);
         assert!(p1.segments.is_some());
         assert!(p1.labels.is_some());
 
@@ -189,7 +193,6 @@ mod test {
         let base = "/users/{id}/some";
         let p1 = Path::new(method, base).unwrap();
         assert_eq!(p1.raw_value, base.to_string());
-        assert!(p1.has_wild_card);
         assert!(p1.segments.is_some());
         assert!(p1.labels.is_some());
 
@@ -209,7 +212,6 @@ mod test {
         let base = "/users/{id}/{name}";
         let p1 = Path::new(method, base).unwrap();
         assert_eq!(p1.raw_value, base.to_string());
-        assert!(p1.has_wild_card);
         assert!(p1.segments.is_some());
         assert!(p1.labels.is_some());
 
@@ -230,7 +232,6 @@ mod test {
         let base = "/users/{id}/{name}/some";
         let p1 = Path::new(method, base).unwrap();
         assert_eq!(p1.raw_value, base.to_string());
-        assert!(p1.has_wild_card);
         assert!(p1.segments.is_some());
         assert!(p1.labels.is_some());
 

@@ -39,6 +39,13 @@ fn all_good(_req: Request, writer: &mut ResponseWriter) {
     let _ = writer.write_header("Content-Type", "text/html");
 }
 
+fn get_by_id(req: Request, writer: &mut ResponseWriter) {
+    let id = req.get_path_value("id").unwrap_or("not found");
+    let body = format!("The id sended was {}", id);
+    let _ = writer.write_code(StatusCode::OK);
+    let _ = writer.write_body(body.as_bytes());
+}
+
 fn main() {
     let mut server = Server::new(42069).expect("server to open");
 
@@ -53,6 +60,10 @@ fn main() {
         .expect("To add endpoint");
     server
         .add_handle_func(method::HttpMethod::GET, "/use-nvim", all_good)
+        .expect("To add endpoint");
+
+    server
+        .add_handle_func(method::HttpMethod::GET, "/user/{id}", get_by_id)
         .expect("To add endpoint");
 
     server.list_and_serve();

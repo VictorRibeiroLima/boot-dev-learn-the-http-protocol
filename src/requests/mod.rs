@@ -3,6 +3,7 @@ use std::{fmt::Display, io::Read};
 use crate::{
     error::Error,
     header::Headers,
+    path::Path,
     requests::{line::RequestLine, parser::RequestParser},
     Result,
 };
@@ -13,13 +14,14 @@ mod parser;
 const BUFFER_INITIAL_SIZE: usize = 1024;
 
 #[derive(Debug)]
-pub struct Request {
+pub struct Request<'a> {
     line: RequestLine,
     headers: Headers,
     body: Vec<u8>,
+    matched_path: Option<&'a Path>,
 }
 
-impl Display for Request {
+impl Display for Request<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.line)?;
         write!(f, "{}", self.headers)?;
@@ -29,7 +31,7 @@ impl Display for Request {
     }
 }
 
-impl Request {
+impl Request<'_> {
     pub fn new_from_reader<R: Read>(mut r: R) -> Result<Self> {
         let mut parser = RequestParser::new();
         let mut buff: Vec<u8> = Vec::with_capacity(BUFFER_INITIAL_SIZE);
@@ -80,6 +82,7 @@ impl Request {
             line: parser.line.unwrap(), //see later
             headers: parser.headers,
             body: parser.body.unwrap(), //see later
+            matched_path: None,
         })
     }
 
@@ -96,6 +99,23 @@ impl Request {
     }
 }
 
+impl<'a> Request<'a> {
+    pub fn set_matched_path(&mut self, matched_path: &'a Path) {
+        self.matched_path = Some(matched_path)
+    }
+
+    pub fn get_path_value(&self, key: &str) -> Option<&str> {
+        let matched_path = self.matched_path.as_ref()?;
+        let segment = matched_path.get_segment_by_label(key)?;
+        let line = &self.line;
+        let target = &line.request_target;
+        let index_of_segment = target.find(segment)?;
+        let segment_block = &target[index_of_segment + segment.len()..];
+        let end_of_segment = segment_block.find("}").unwrap_or(segment_block.len());
+        let value = &segment_block[..end_of_segment];
+        return Some(value);
+    }
+}
 #[cfg(test)]
 mod test {
 

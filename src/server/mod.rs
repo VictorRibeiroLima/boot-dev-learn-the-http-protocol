@@ -47,7 +47,7 @@ fn not_found(_req: Request, writer: &mut ResponseWriter) {
 
 fn handle_connection(stream: TcpStream, endpoints: Arc<Endpoints>) {
     let request = Request::new_from_reader(&stream);
-    let request = match request {
+    let mut request = match request {
         Ok(r) => r,
         Err(e) => {
             println!("ERROR: {:?}", e);
@@ -58,10 +58,11 @@ fn handle_connection(stream: TcpStream, endpoints: Arc<Endpoints>) {
     let line = request.line();
     let path = Path::new(line.method, &line.request_target).unwrap(); //see latter
     let mut writer = ResponseWriter::new(&stream);
-    let endpoint = match find_endpoint(&path, &endpoints) {
-        Some((_, func)) => func,
-        None => not_found,
+    let (p, endpoint) = match find_endpoint(&path, &endpoints) {
+        Some((p, func)) => (p, func),
+        None => (&path, not_found as HandleFunc),
     };
+    request.set_matched_path(p);
 
     endpoint(request, &mut writer);
     if writer.flushed() {
