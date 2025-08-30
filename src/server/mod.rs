@@ -1,5 +1,4 @@
 use std::{
-    collections::HashMap,
     io::Error,
     net::{SocketAddr, TcpListener, TcpStream},
     sync::Arc,
@@ -7,14 +6,11 @@ use std::{
 };
 
 use crate::{
-    method::HttpMethod,
-    requests::Request,
-    response::writer::ResponseWriter,
-    server::{code::StatusCode, path::Path},
+    method::HttpMethod, path::Path, requests::Request, response::writer::ResponseWriter,
+    server::code::StatusCode,
 };
 
 pub mod code;
-pub mod path;
 pub mod response;
 
 pub type HandleFunc = fn(req: Request, writer: &mut ResponseWriter);

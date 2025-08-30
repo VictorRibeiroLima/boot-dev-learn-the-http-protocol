@@ -10,6 +10,7 @@ use crate::{
 mod error;
 mod header;
 mod method;
+mod path;
 mod requests;
 mod response;
 mod server;

@@ -143,7 +143,7 @@ impl Display for Path {
 }
 #[cfg(test)]
 mod test {
-    use crate::{method::HttpMethod, server::path::Path};
+    use crate::{method::HttpMethod, path::Path};
 
     #[test]
     fn test_equal_simple_paths() {
