@@ -1,0 +1,48 @@
+package main
+
+import "fmt"
+
+/*
+ */
+func main() {
+	fmt.Print(`read: Do you h\n`)
+	fmt.Print(`read: ave what\n`)
+	fmt.Print(`read:  it take\n`)
+	fmt.Print(`read: s to be\n`)
+	fmt.Print(`read: an engin\n`)
+	fmt.Print(`read: eer at T\n`)
+	fmt.Print(`read: heStartu\n`)
+	fmt.Print(`read: p™?\n`)
+	fmt.Print(`Ar\n`)
+	fmt.Print(`read: e you wi\n`)
+	fmt.Print(`read: lling to\n`)
+	fmt.Print(`read:  work 80\n`)
+	fmt.Print(`read:  hours a\n`)
+	fmt.Print(`read:  week in\n`)
+	fmt.Print(`read:  hopes t\n`)
+	fmt.Print(`read: hat your\n`)
+	fmt.Print(`read:  0.001% \n`)
+	fmt.Print(`read: equity i\n`)
+	fmt.Print(`read: s worth \n`)
+	fmt.Print(`read: somethin\n`)
+	fmt.Print(`read: g?\n`)
+	fmt.Print(`Can y\n`)
+	fmt.Print(`read: ou say "\n`)
+	fmt.Print(`read: synergy"\n`)
+	fmt.Print(`read:  and "de\n`)
+	fmt.Print(`read: mocratiz\n`)
+	fmt.Print(`read: e" with \n`)
+	fmt.Print(`read: a straig\n`)
+	fmt.Print(`read: ht face?\n`)
+	fmt.Print(`read:\n`)
+	fmt.Print(`Are you\n`)
+	fmt.Print(`read:  prepare\n`)
+	fmt.Print(`read: d to eat\n`)
+	fmt.Print(`read:  top ram\n`)
+	fmt.Print(`read: en at yo\n`)
+	fmt.Print(`read: ur desk\n`)
+	fmt.Print(`read: 3 meals\n`)
+	fmt.Print(`read: a day?\n`)
+	fmt.Print(`e\n`)
+	fmt.Print(`read: nd\n`)
+}
