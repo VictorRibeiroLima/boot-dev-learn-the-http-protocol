@@ -90,10 +90,12 @@ impl Request<'_> {
         &self.line
     }
 
+    #[allow(dead_code)]
     pub fn headers(&self) -> &Headers {
         &self.headers
     }
 
+    #[allow(dead_code)]
     pub fn body(&self) -> &[u8] {
         &self.body
     }

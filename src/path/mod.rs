@@ -1,6 +1,6 @@
-use std::{collections::HashMap, fmt::Display, ops::Index};
+use std::{collections::HashMap, fmt::Display};
 
-use crate::method::{self, HttpMethod};
+use crate::method::HttpMethod;
 
 #[derive(Debug)]
 pub struct Path {

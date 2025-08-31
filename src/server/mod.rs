@@ -13,7 +13,7 @@ use crate::{
 pub mod code;
 pub mod response;
 
-pub type HandleFunc = fn(req: Request, writer: &mut ResponseWriter);
+pub type HandleFunc = fn(req: Request, writer: ResponseWriter);
 
 type Endpoints = Vec<(Path, HandleFunc)>;
 
@@ -38,7 +38,7 @@ fn insert_endpoint(
     Ok(())
 }
 
-fn not_found(_req: Request, writer: &mut ResponseWriter) {
+fn not_found(_req: Request, mut writer: ResponseWriter) {
     let body = include_bytes!("../../static/not-found.html");
     let _ = writer.write_code(StatusCode::NotFound);
     let _ = writer.write_body(body);
@@ -57,24 +57,13 @@ fn handle_connection(stream: TcpStream, endpoints: Arc<Endpoints>) {
 
     let line = request.line();
     let path = Path::new(line.method, &line.request_target).unwrap(); //see latter
-    let mut writer = ResponseWriter::new(&stream);
+    let writer = ResponseWriter::new(&stream);
     let (p, endpoint) = match find_endpoint(&path, &endpoints) {
         Some((p, func)) => (p, func),
         None => (&path, not_found as HandleFunc),
     };
     request.set_matched_path(p);
-
-    endpoint(request, &mut writer);
-    if writer.flushed() {
-        return;
-    }
-
-    match writer.flush() {
-        Err(e) => {
-            eprintln!("{}", e)
-        }
-        Ok(()) => {}
-    }
+    endpoint(request, writer);
 }
 
 pub struct Server {

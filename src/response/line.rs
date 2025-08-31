@@ -4,7 +4,7 @@ use crate::{server::code::StatusCode, SEPARATOR};
 
 const VERSION_BYTES: &[u8; 8] = b"HTTP/1.1";
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct ResponseLine {
     pub http_version: [u8; 8],
     pub code: StatusCode,

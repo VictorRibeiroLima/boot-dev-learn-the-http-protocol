@@ -9,7 +9,7 @@ use crate::{error::Error, Result, SEPARATOR};
 
 const JOIN_HEADER: &[u8; 2] = b": ";
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Headers(HashMap<String, String>);
 
 impl Display for Headers {
@@ -80,6 +80,10 @@ impl Headers {
                 self.0.insert(key, value);
             }
         };
+    }
+
+    pub fn remove(&mut self, key: &str) {
+        self.0.remove(key);
     }
 
     pub fn insert_if_not_exists(&mut self, key: String, value: String) {

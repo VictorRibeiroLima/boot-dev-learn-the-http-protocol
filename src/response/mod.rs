@@ -19,6 +19,7 @@ impl Response<'_> {
         w.write_all(&self.body)
     }
 
+    #[allow(dead_code)]
     pub fn to_bytes(self) -> Vec<u8> {
         let line_len = self.line.byte_len();
         let headers_len = self.headers.byte_len();
